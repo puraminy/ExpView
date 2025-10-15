@@ -3,6 +3,10 @@
   ],
   "init_col": "model",
   "sel_cols":[
+    "model",
+    "learning_rate",
+    "batch_size",
+    "accuracy"
   ],
   "ex_cols":[
   ],
@@ -26,6 +30,5 @@
   ],
   "index_cols":[
   ],
-  "score_cols":["m_score"],
-  "score_cols_m":["rouge_score","num_preds"]
+  "score_cols":["accuracy"]
 }

@@ -675,9 +675,11 @@ def get_main_vars(df):
         main_vars = list(dict.fromkeys(mvars))
     return main_vars
 
-def summarize(df, rep_cols=None, score_col=None, rename =True, pcols=[]):
+def summarize(df, pivot_col=None, rep_cols=None, score_col=None, rename =True, pcols=[]):
     mdf = df #main_df
-    pivot_cols = ["prefix"]
+    pivot_cols = [pivot_col] if pivot_col else []
+    if not pivot_cols:
+        return df
     if not rep_cols:
         file_dir = Path(__file__).parent
         with open(os.path.join(file_dir, 'cols.json'),'r') as f:
@@ -695,7 +697,7 @@ def summarize(df, rep_cols=None, score_col=None, rename =True, pcols=[]):
         if not "compose_method" in df:
             df["compose_method"] = "PT"
 
-    rels = df["prefix"].unique()
+    rels = df[pivot_col].unique()
     if score_col is not None: 
         score_cols = [score_col,'num_preds'] 
     else:
