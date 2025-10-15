@@ -760,17 +760,18 @@ def add_scores(df):
     if "depth_score" in df:
         df["depth_min_score"] = df.groupby(['fid','prefix','input_text'])["depth_score"].transform("min")
     # df["perp_min_score"] = df.groupby(['fid','prefix','input_text'])["perp_score"].transform("min")
-    df["rouge_score"] = df.groupby(['fid','prefix','input_text'])["rouge_score"].transform("max")
-    df["bert_score"] = df.groupby(['fid','prefix','input_text'])["bert_score"].transform("max")
-    df["hscore"] = df.groupby(['fid','prefix','input_text'])["hscore"].transform("max")
-    df["pred_freq"] = df.groupby(['fid','prefix','pred_text1'],
-                     sort=False)["pred_text1"].transform("count")
-    cols = ['fid', 'prefix']
-    tdf = df.groupby(["fid","input_text","prefix"]).first().reset_index()
-    df = df.merge(tdf[cols+['pred_text1']]
-         .value_counts().groupby(cols).head(1)
-         .reset_index(name='pred_max_num').rename(columns={'pred_text1': 'pred_max'})
-       )
+    if False:
+        df["rouge_score"] = df.groupby(['fid','prefix','input_text'])["rouge_score"].transform("max")
+        df["bert_score"] = df.groupby(['fid','prefix','input_text'])["bert_score"].transform("max")
+        df["hscore"] = df.groupby(['fid','prefix','input_text'])["hscore"].transform("max")
+        df["pred_freq"] = df.groupby(['fid','prefix','pred_text1'],
+                         sort=False)["pred_text1"].transform("count")
+        cols = ['fid', 'prefix']
+        tdf = df.groupby(["fid","input_text","prefix"]).first().reset_index()
+        df = df.merge(tdf[cols+['pred_text1']]
+             .value_counts().groupby(cols).head(1)
+             .reset_index(name='pred_max_num').rename(columns={'pred_text1': 'pred_max'})
+           )
 
     #temp = (pd
     #       .get_dummies(df, columns = ['pred_text1'], prefix="",prefix_sep="")
@@ -783,6 +784,7 @@ def add_scores(df):
 
 def grouping(df, FID='fid'):
     col = [FID, "prefix"]
+    return df #TODO
     _agg = {}
     for c in df.columns:
         if c.endswith("score"):
@@ -828,9 +830,9 @@ def add_cols(df):
     df['id']=df.index
     df = df.reset_index(drop=True)
     if not "tag" in df:
-        df["tag"] = np.NaN 
+        df["tag"] = np.nan 
     if not "hscore" in df:
-        df["hscore"] = np.NaN 
+        df["hscore"] = np.nan 
 
     if not "pid" in df:
         df["pid"] = 0
@@ -841,7 +843,7 @@ def add_cols(df):
     if "gen_norm_methods" in df:
         df["gen_norm_method"] = df["gen_norm_methods"]
 
-    if not "query" in df:
+    if not "query" in df and "input_text" in df:
         df["query"] = df["input_text"]
     if not "learning_rate" in df:
         df["learning_rate"] = 1
@@ -858,8 +860,9 @@ def add_cols(df):
     if not "bert_score" in df:
        df["bert_score"] = 0
 
-    df["model_temp"] = df["model_name_or_path"].str.split("-").str[2]
-    df["model_base"] = df["model_name_or_path"].str.split("-").str[1]
+    if "model_name_or_path" in df:
+        df["model_temp"] = df["model_name_or_path"].str.split("-").str[2]
+        df["model_base"] = df["model_name_or_path"].str.split("-").str[1]
     #if "fid" in df:
     #    df = df.rename(columns={"fid":"expid"})
 
@@ -895,9 +898,10 @@ def add_cols(df):
         'unsup': 'Denoising',
         "mixed": "Mixed"
         }
-    model_temps = df["model_temp"].unique()
-    if any("sup" in str(x) for x in model_temps):
-        df['model_temp'] = df['model_temp'].map(model_temp_mapping)
+    if "model_temp" in df:
+        model_temps = df["model_temp"].unique()
+        if any("sup" in str(x) for x in model_temps):
+            df['model_temp'] = df['model_temp'].map(model_temp_mapping)
 
     overrides = {'SL': 'SL1', 'SLP': 'SLP1'}
     if False:
@@ -1212,10 +1216,11 @@ def show_df(df, summary=False):
         df['nr_score'] = np.where((df['bert_score'] > 0.3) & (df['nr_score'] < 0.1), df['bert_score'], df['rouge_score'])
 
 
-    df['prefix'] = df['prefix'].str.replace("yelp_polarity", "yelp-polarity")
-    pattern = r'(^.+)_(\1$)'
-    # Use str.replace() with regex to replace matching patterns
-    df['prefix'] = df['prefix'].str.replace(pattern, r'\1', regex=True)
+    if "prefix" in df:
+        df['prefix'] = df['prefix'].str.replace("yelp_polarity", "yelp-polarity")
+        pattern = r'(^.+)_(\1$)'
+        # Use str.replace() with regex to replace matching patterns
+        df['prefix'] = df['prefix'].str.replace(pattern, r'\1', regex=True)
 
     #wwwwwwwwww
     colors = ['blue','teal','orange', 'red', 'purple', 'brown', 'pink','gray','olive','cyan']
@@ -5388,14 +5393,15 @@ def get_files(dfpath, dfname, dftype, summary, limit, file_id="parent", current_
             for root_file in all_files:
                 # root_file = os.path.join(root,_file)
                 _file = root_file.split("/")[-1]
-                cond = root_file.endswith(dftype)
-                cond = any(s.strip() in root_file for s in dfname)
+                cond1 = not dftype or any(root_file.endswith(dft) for dft in dftype)
+                cond2 = not dfname or any(s.strip() in root_file for s in dfname)
+                cond = cond1 or cond2
                 if check_time:
                     ts = os.path.getctime(root_file)
                     ctime = datetime.fromtimestamp(ts)
                     last_hour = datetime.now() - timedelta(hours = 5)
                     cond = cond and ctime > last_hour
-                if dftype in _file and cond: 
+                if any(dft in _file for dft in dftype) and cond: 
                     if root_file in current_files:
                         continue
                     matched_files.append((os.path.getctime(root_file), root_file))
@@ -5417,6 +5423,8 @@ def get_files(dfpath, dfname, dftype, summary, limit, file_id="parent", current_
         for f in tqdm(files):
             if f.endswith(".tsv"):
                 df = pd.read_table(f, low_memory=False)
+            elif f.endswith(".csv"):
+                df = pd.read_csv(f, low_memory=False)
             elif f.endswith(".json"):
                 df = load_results(f)
             force_fid = False
@@ -5601,7 +5609,7 @@ def main(ctx, fname, path, fid, ftype, dpy, summary, hkey, cmd, search, limit, n
     hotkey = hkey 
     global_cmd = cmd
     dfname = fname
-    dftype = ftype
+    dftype = set(["tsv","csv", ftype])
     runid = mylogs.get_run_id()
     counter = int(runid.replace("run_",""))
     if limit > 0 and not fname:
