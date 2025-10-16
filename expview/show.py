@@ -555,15 +555,13 @@ def get_main_vars(df):
         main_vars = list(dict.fromkeys(mvars))
     return main_vars
 
-def summarize(df, pivot_col=None, rep_cols=None, score_col=None, rename =True, pcols=[]):
+def summarize(df, pivot_col=None, rep_cols=None, 
+              score_col=None, rename =True, pcols=[], all_cols=[]):
     mdf = df #main_df
     pivot_cols = [pivot_col] if pivot_col else []
     if not pivot_cols:
         return df
-    if not rep_cols:
-        file_dir = Path(__file__).parent
-        with open(os.path.join(file_dir, 'cols.json'),'r') as f:
-            all_cols = json.load(f)
+    if not rep_cols and all_cols:
         if 'sel_cols' in all_cols:
             sel_cols = all_cols['sel_cols'] 
         dim_cols = all_cols['dim_cols'] if "dim_cols" in all_cols else []
@@ -815,11 +813,11 @@ def add_cols(df):
         df["rouge_score"] = df["rouge_score"]*100 
         df["bert_score"] = df["bert_score"]*100 
     if True: #"compose_method" in df:
-        df["expid"] = df["exp_name"].str.split("-").str[1]
+        #df["expid"] = df["exp_name"].str.split("-").str[1]
         if "prompts_conf" in df:
             df.loc[df['prompts_conf'] == 'SLP', 'num_target_prompts'] -= 1
         # if not "expid" in df:
-        df["expid"] = df["expid"].astype(str).str.replace("_num", "", regex=False)
+        #df["expid"] = df["expid"].astype(str).str.replace("_num", "", regex=False)
         df["expname"] = df["exp_name"].str.split("-").str[1]
         df["ftag"] = df["folder"].str.split("/").str[-1]
         df["ftag"] = df["ftag"].str.split("_").str[0]
@@ -1087,7 +1085,8 @@ def show_df(df, summary=False):
     #    df["m_score"] = np.where((df['m_score']<=0), 0.50, df['m_score'])
 
     orig_tag_cols = tag_cols.copy()
-    src_path = ""
+    
+    src_path = df.loc[0, "src_path"]
     if "src_path" in df and False:
         src_path = df.loc[0, "src_path"]
         if not src_path.startswith("/"):
@@ -1154,7 +1153,7 @@ def show_df(df, summary=False):
     note_dir = os.path.join(doc_dir, "notes")
     Path(note_dir).mkdir(exist_ok=True, parents=True)
     all_cols = {}
-    with open(os.path.join(file_dir, 'cols.json'),'r') as f:
+    with open(os.path.join(src_path, 'cols.json'),'r') as f:
         all_cols = json.load(f)
 
     if 'sel_cols' in all_cols:
@@ -1193,9 +1192,10 @@ def show_df(df, summary=False):
 
     if 'init_col' in all_cols:
         init_col = all_cols['init_col']
-        if not init_col in sel_cols and init_col in df:
-            sel_cols.insert(1, init_col) 
-        cur_col = sel_cols.index(init_col) - 1
+        if init_col:
+            if not init_col in sel_cols and init_col in df:
+                sel_cols.insert(1, init_col) 
+            cur_col = sel_cols.index(init_col) - 1
 
     sel_fid = "" 
     df_cond = True
@@ -4103,7 +4103,7 @@ def show_df(df, summary=False):
                 if sel_cols[cur_col].endswith("_score"):
                     score_col = sel_cols[cur_col]
                 backit(df, sel_cols)
-                tdf = summarize(df, score_col=score_col, pcols=pcols)
+                tdf = summarize(df, score_col=score_col, pcols=pcols, all_cols=all_cols)
             else:
                 tdf = df.copy()
             #rename_dict = {
@@ -4449,7 +4449,7 @@ def show_df(df, summary=False):
             if not global_summary:
                 backit(df, sel_cols)
                 pdf = summarize(df, rep_cols=selected_cols, 
-                        score_col=score_col, pcols=pcols)
+                        score_col=score_col, pcols=pcols, all_cols=all_cols)
             else:
                 pdf = df
             avg_col = "All"

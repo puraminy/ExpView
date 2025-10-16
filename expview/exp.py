@@ -1,6 +1,6 @@
 import click
 import debugpy
-import mylogs
+import expview.mylogs as mylogs
 import glob
 import json
 from pathlib import Path
@@ -8,8 +8,8 @@ import os
 import itertools
 import os.path as op
 import logging
-from utils import * 
-from deepdiff import DeepDiff
+from expview.utils import * 
+# from deepdiff import DeepDiff #TODO
 logger = logging.getLogger(__name__)
 import pandas as pd
 
@@ -17,29 +17,44 @@ def run_command(command):
     output = subprocess.getoutput(command)
     return output
 
-def sync_cols_with_df(df, main_vars=None, path=None):
+def sync_cols_with_df(df, main_cols=None, base_cols=None, path="cols.json"):
     """
-    Synchronize cols.json with DataFrame and main_vars.
-    If no path is given, automatically resolve it relative to exp.py.
+    Synchronize cols.json with the DataFrame and main/base columns.
+    Ensures all DataFrame columns are reflected in cols.json,
+    while preserving order and avoiding duplication.
     """
-    main_vars = main_vars or {}
+    import os, json
+    import pandas as pd
 
-    # If no path provided, use the directory of this script (exp.py)
+    # Helper: preserve order, remove duplicates
+    def unique_preserve_order(seq):
+        seen = set()
+        result = []
+        for x in seq:
+            if x not in seen:
+                seen.add(x)
+                result.append(x)
+        return result
+
+    # Defaults
+    main_cols = list(main_cols or [])
+    base_cols = list(base_cols or ["expid", "output_dir", "trial", "label"])
+
+    # Auto-resolve path relative to this script
     if path is None:
         base_dir = os.path.dirname(os.path.abspath(__file__))
         path = os.path.join(base_dir, "cols.json")
 
-    main_vars = main_vars or {}
     df_cols = list(df.columns)
 
-    # Step 1: Load existing configuration if available
+    # Load existing config or initialize
     if os.path.exists(path):
         with open(path) as f:
             cols = json.load(f)
     else:
         cols = {}
 
-    # Step 2: Initialize any missing lists
+    # Ensure all expected list keys exist
     def ensure_list(key):
         if key not in cols or not isinstance(cols[key], list):
             cols[key] = []
@@ -50,30 +65,41 @@ def sync_cols_with_df(df, main_vars=None, path=None):
     ]:
         ensure_list(k)
 
-    # Step 3: Guarantee core defaults
-    base_cols = {"expid", "output_dir", "trial", "label"}
-    main_cols = set(main_vars.keys())
-    all_cols = set(df_cols) | base_cols | main_cols
+    # --- Core columns ---
+    df_cols_set = set(df_cols)
+    base_cols_set = set(base_cols)
+    main_cols_set = set(main_cols)
+    all_cols = df_cols_set | base_cols_set | main_cols_set
 
-    # Step 4: Merge columns into existing fields
-    cols["sel_cols"] = sorted(set(cols["sel_cols"]) | all_cols)
-    cols["rep_cols"] = sorted(set(cols["rep_cols"]) | (base_cols | main_cols))
+    # Compute "other" columns (not main/base)
+    other_cols = [c for c in df_cols if c not in base_cols_set and c not in main_cols_set]
+
+    # --- Smart defaults ---
     if "accuracy" in all_cols and "accuracy" not in cols["score_cols"]:
         cols["score_cols"].append("accuracy")
 
-    # Step 5: Ensure init_col is valid
+    # --- Merge updates (preserve order, avoid duplicates) ---
+    cols["sel_cols"] = unique_preserve_order(
+            cols["sel_cols"] + ["expid"] + main_cols + other_cols)
+    cols["rep_cols"] = unique_preserve_order(cols["rep_cols"] + main_cols + base_cols)
+    cols["extra_cols"] = unique_preserve_order(cols["extra_cols"] + other_cols)
+
+    # --- Pick initial column ---
     if not cols.get("init_col") or cols["init_col"] not in all_cols:
-        cols["init_col"] = next(iter(main_cols), "model")
+        cols["init_col"] = next(iter(main_cols), "")
 
-    # Step 6: Optionally guess numeric measure columns
+    # --- Identify numeric measures ---
     num_cols = [c for c in df_cols if pd.api.types.is_numeric_dtype(df[c])]
-    cols["measure_cols"] = sorted(set(cols["measure_cols"]) | set(num_cols))
+    cols["measure_cols"] = unique_preserve_order(cols["measure_cols"] + num_cols)
 
-    # Step 7: Save updated config
+    # --- Save updated configuration ---
     with open(path, "w") as f:
         json.dump(cols, f, indent=2, ensure_ascii=False)
 
-    print(f"[sync] Updated {path} with {len(all_cols)} total columns")
+    print(f"[sync] Updated {path} with:")
+    print(f"  • {len(all_cols)} total columns")
+    print(f"  • {len(other_cols)} 'other' columns added to extra_cols")
+
     return cols
 
 def map_param(param_map, x, key=False):
@@ -455,7 +481,7 @@ def experiment_runner(func=None):
        mylogs.bp("start")
        _dir = Path(__file__).parent
        param_map = {}
-       param_file = os.path.join(_dir, "params.json")
+       param_file = os.path.join("", "params.json")
        if Path(param_file).is_file():
            with open(param_file) as f:
               param_map = json.load(f)
@@ -854,21 +880,25 @@ def experiment_runner(func=None):
                        return
            done = "na"
            args["exp_number"] = exp_number
+           cur_path = os.getcwd()
            df_columns = ["expid", "output_dir", "trial", "label"] + main_vars
            df = pd.DataFrame(columns=df_columns)
-           breakpoint()
-           row = {
+           base_vars = {
                "expid": args.get("expid", ""),
+               "src_path": cur_path,
                "output_dir": args.get("output_dir", "").strip("%"),
                "trial": args.get("trial", ""),
                "label": args.get("label", ""),
            }
-
+           all_vars = {}
+           for k, v in base_vars.items():
+               all_vars[k] = str(v)  # ensure values are string or numeric
            for k, v in mvars.items():
-               row[k] = str(v)  # ensure values are string or numeric
+               all_vars[k] = str(v)  
 
-           df = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
-
+           df = pd.concat([df, pd.DataFrame([all_vars])], ignore_index=True)
+           main_cols = set(mvars.keys())
+           base_cols = set(base_vars.keys())
 
            exp_number += 1
            if debug:
@@ -899,17 +929,16 @@ def experiment_runner(func=None):
                    print(_conf)
                    raise Exception("An error occured in the experiment")
 
-           sync_cols_with_df(df, mvars) 
+           sync_cols_with_df(df, main_cols, base_cols) 
            df.to_csv(os.path.join(exp_path, "results.csv"), index=False)
            if preview == "one" or (preview == "data" and done == "data_preview"):
                print("return due preview:", preview, " done:",  done)
                return
     return run
-# m3
+
 @experiment_runner
-def train(**kwargs):
-    main_vars = kwargs.setdefault("main_vars",{})
-    print(main_vars)
+def train(args, df):
+    print(args)
 
 if __name__ == "__main__":
     cli()
