@@ -83,12 +83,14 @@ now = datetime.datetime.now(tehran)
 today = now.strftime('%Y-%m-%d')
 now = now.strftime("%m-%d-%H-%M-%S")  # Adds seconds
 home = expanduser("~")
-colab = not "ahmad" in home and not "pouramini" in home
+use_home_as_base = False
+base = "" if not use_home_as_base else home
+colab = False
 if not colab: 
-    logPath = os.path.join(home, "logs")
-    resPath = os.path.join(home, "results") 
-    pretPath = os.path.join(home, "pret") 
-    confPath = os.path.join(home, "confs") 
+    logPath = base
+    resPath = os.path.join(base, "results") 
+    pretPath = os.path.join(base, "pret") 
+    confPath = os.path.join(base, "confs") 
 else:
     home = "/content/drive/MyDrive/"
     pretPath = "/content/drive/MyDrive/pret"

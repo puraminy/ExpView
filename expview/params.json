@@ -1,0 +1,5 @@
+{
+  "lr":"learning_rate",
+  "bs":"batch_size",
+  "/bs":"8/16/32"
+}
