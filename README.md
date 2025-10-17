@@ -1,33 +1,44 @@
-# ExpView
+# Exper
 
-# ExpView
+# Exper
 > ⚠️ Note: This project is currently under active maintenance and refinement. 
 
 
 ## About
-A terminal-based analytics and visualization tool inspired by spreadsheet interfaces like Excel, optimized for developers and data scientists. Displays columns of a pandas DataFrame directly in the terminal using the Curses library, with fast navigation, shortcut keys, and instant refresh.  
+A terminal-based analytics and visualization tool inspired by spreadsheet interfaces like Excel, optimized for developers and data scientists. Easily expandable by user codes or plug-ins, open source. Displays columns of a pandas DataFrame directly in the terminal using the Curses library, with fast navigation, shortcut keys, and instant refresh.  
 
-ExpView integrates with experiment pipelines by passing variable configurations to external programs, collecting CSV outputs, and visualizing results with matplotlib to analyze parameter effects and performance trends. It is ideal for quickly exploring datasets, aggregating metrics, and generating plots without leaving the terminal.  
+Exper integrates with experiment pipelines by passing variable configurations to external programs, collecting CSV outputs, Managing configs, and visualizing results with matplotlib to analyze parameter effects and performance trends. It is ideal for quickly exploring datasets, aggregating metrics, and generating plots without leaving the terminal.  
 
-## Sample Dataset
-A sample dataset `sample.csv` is included to demonstrate the tool’s capabilities. It contains synthetic experiment runs with multiple parameters, performance metrics, and dates. This dataset is suitable for:  
+## Installation
+to install the program clone it then go to Exper folder and run 
+`pip install -e .`, 
 
-- Aggregation using pivot tables (e.g., average accuracy by model and optimizer)  
-- Line and bar charts (e.g., accuracy trends over time, batch size vs. loss)  
-- Quick filtering and sorting to analyze parameter effects  
+This will install the expframe and requirements
 
-## Test
+## Get Started
+In the example folder, you can find an initial example on how to use it for a new experiment.
+The code is repeated below:
 
-To test the tool with the sample dataset:
-
-```bash
-python show.py sample
 ```
 
-This will load the dataset in the terminal interface, allowing you to:
 
-- Navigate the DataFrame with arrow keys
-- Sort and filter columns
-- Generate basic matplotlib plots directly from the terminal
-- Explore aggregations and trends interactively
+```
 
+
+
+## Exploring Experiment Results
+
+Then running expframe inside `logs` directory or any subdirectory including results wil search for the csv, tsv, or json files, merge them and shows the rusults in a tabular ui for navigation and applying analysis tools
+
+```bash
+expframe 
+```
+### Screen shot of output
+
+ link to a screen shot
+
+## Ploting
+
+expframe offers manyfeatures and many features can plug-in to it or written by the user, as an example of a basic visulasation you can draw a plot for the example experiment above. 
+
+navigate on the column `learning_rate` then hit X (shift + x) this set and highlight column as x index, then for ... hit Y (shift + y) it sets the column as y axis, if you have changed another variable like `batch_size` you can select it as legend using T (shift + t) now by hitting : the command prompt opens and you can enter `line` to draw line which is show below.

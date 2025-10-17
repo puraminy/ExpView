@@ -1,20 +1,24 @@
 # example.py
 import random
-from expview import experiment_runner, cli
+from expframe import experiment, cli
 
-@experiment_runner
-def dummy_experiment(args, results):
+
+@experiment
+def dummy_experiment(run_args, exp_vars, results):
     """
-    A simple experiment function to test the experiment_runner decorator.
+    run_args → meta / infra configs (expid, save_path, seed, logging)
+    exp_vars → actual experimental parameters
+    results  → dict for metrics and artifacts
     """
-    print("Running dummy_experiment with args:")
-    for k, v in args.items():
-        print(f"  {k}: {v}")
+    print(f"------------------- Experiment {run_args['expid']} ------------------------")
+    for k, v in exp_vars.items():
+        print(f"{k}: {v}")
 
     accuracy = round(random.uniform(0.4, 0.99), 2)
     results["accuracy"] = accuracy
 
-    print("Accuracy:", accuracy)
+    print("accuracy:", accuracy)
+
 
 if __name__ == "__main__":
     cli()

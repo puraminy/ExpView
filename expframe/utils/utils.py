@@ -1,14 +1,9 @@
 # from crosspt.third_party.models.t5 import T5LayerNorm
-from torch.nn import LayerNorm
-from transformers.models.t5.modeling_t5 import T5LayerNorm
-from crosspt.adapters import (AutoAdapterConfig, AdapterController, Adapter)
 import os
 import regex as re
 import logging
 from dataclasses import fields
-import torch.nn as nn
 import json
-import torch 
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw

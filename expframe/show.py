@@ -30,10 +30,10 @@ import re
 import seaborn as sns
 from pathlib import Path
 import pandas as pd
-from expview.win import *
+from expframe.win import *
 from datetime import datetime, timedelta
-import expview.mylogs as mylogs
-from expview.mylogs import *
+import expframe.mylogs as mylogs
+from expframe.mylogs import *
 import time
 import json
 from tqdm import tqdm
@@ -48,7 +48,7 @@ from PIL import ImageChops
 #import mto.metrics.metrics as mets
 import scipy
 import math
-import expview.reports as reports
+import expframe.reports as reports
 
 matplotlib.rcParams.update({
     'font.size': 16,              # Base font size (larger for small figure widths)
@@ -924,7 +924,7 @@ def calc_metrics(main_df):
     return main_df
 
 
-class MyDF:
+class ExpFrame:
     context = ""
     df = None
     sel_row = 0
@@ -1062,7 +1062,7 @@ def show_df(df, summary=False):
             mbeep()
             return
         if not cur_df:
-            cur_df = MyDF(df, context, sel_cols, cur_col,info_cols, 
+            cur_df = ExpFrame(df, context, sel_cols, cur_col,info_cols, 
                 sel_rows, sel_row, cur_row, left, group_col, 
                 selected_cols, measure_cols, pcols, dim_cols, cat_cols, sort, is_filtered, cond_set)
         back.append(cur_df)

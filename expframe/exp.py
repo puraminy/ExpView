@@ -1,6 +1,6 @@
 import click
 import debugpy
-import expview.mylogs as mylogs
+import expframe.mylogs as mylogs
 import glob
 import json
 from pathlib import Path
@@ -8,14 +8,11 @@ import os
 import itertools
 import os.path as op
 import logging
-from expview.utils import * 
+from expframe.utils import * 
 # from deepdiff import DeepDiff #TODO
 logger = logging.getLogger(__name__)
 import pandas as pd
 
-def run_command(command):
-    output = subprocess.getoutput(command)
-    return output
 
 def sync_cols_with_df(df, main_cols=None, base_cols=None, path="cols.json"):
     """
@@ -89,16 +86,12 @@ def sync_cols_with_df(df, main_cols=None, base_cols=None, path="cols.json"):
         cols["init_col"] = next(iter(main_cols), "")
 
     # --- Identify numeric measures ---
-    num_cols = [c for c in df_cols if pd.api.types.is_numeric_dtype(df[c])]
-    cols["measure_cols"] = unique_preserve_order(cols["measure_cols"] + num_cols)
+    #num_cols = [c for c in df_cols if pd.api.types.is_numeric_dtype(df[c])]
+    #cols["measure_cols"] = unique_preserve_order(cols["measure_cols"] + num_cols)
 
     # --- Save updated configuration ---
     with open(path, "w") as f:
         json.dump(cols, f, indent=2, ensure_ascii=False)
-
-    print(f"[sync] Updated {path} with:")
-    print(f"  • {len(all_cols)} total columns")
-    print(f"  • {len(other_cols)} 'other' columns added to extra_cols")
 
     return cols
 
@@ -131,10 +124,10 @@ def map_param(param_map, x, key=False):
 def cli():
     pass
 
-def experiment_runner(func=None):
+def experiment(func=None):
     if func is None:
-        # used as @experiment_runner()
-        return lambda f: experiment_runner(f)
+        # used as @experiment()
+        return lambda f: experiment(f)
 
     @cli.command(context_settings=dict(
                 ignore_unknown_options=True,
@@ -147,6 +140,14 @@ def experiment_runner(func=None):
         default="exp",
         type=str,
         help="Experiment name"
+    )
+    @click.option(
+        "--exp_folder",
+        "-e",
+        "-to",
+        default="all",
+        type=str,
+        help="The name of a new directory for experiment when loading an existing config file"
     )
     @click.option(
         "--exp_conf",
@@ -300,13 +301,6 @@ def experiment_runner(func=None):
         help="Max number of experiments to do (0 means all)"
     )
     @click.option(
-        "--new_exp_folder",
-        "-to",
-        default="all",
-        type=str,
-        help="The name of a new directory for experiment when loading an existing config file"
-    )
-    @click.option(
         "--inc_run_id",
         "-new",
         "-inc",
@@ -328,12 +322,12 @@ def experiment_runner(func=None):
         help="The directory to save all experiments"
     )
     @click.pass_context
-    def run(ctx, cfg_pat, experiment, exp_conf, break_point, preview, exp_vars, 
+    def run(ctx, cfg_pat, experiment, exp_folder, exp_conf, break_point, preview, exp_vars, 
             log_var, last_var, main_vars, 
             debug, version, trial, skip, save_conf, rem, repeat, 
             label, deep_check, merge, copy_prev_exp, 
             reval, test, use_wandb, download_model, max_exp, 
-            new_exp_folder, inc_run_id, copy_to, inp_log_path):
+            inc_run_id, copy_to, inp_log_path):
        if debug:
            port = "1234"
            if not break_point: break_point = debug
@@ -396,29 +390,29 @@ def experiment_runner(func=None):
                cc += 1
            experiment = exp_name
 
-       #if exp_conf and not new_exp_folder: 
+       #if exp_conf and not exp_folder: 
        #   log_folder = experiment 
           #ans = input("Do you want save the results in (otherwise enter new folder) "+log_folder+ "[yes]:")
           #if ans and ans != "yes":
-          #    new_exp_folder = ans
+          #    exp_folder = ans
           #else:
-       #   new_exp_folder = log_folder 
+       #   exp_folder = log_folder 
 
        mylogs.bp("start") 
        if experiment == "self":
            save_path = os.path.join(os.getcwd(), "output")
-       #if prev_exp_folder and not new_exp_folder:
+       #if prev_exp_folder and not exp_folder:
        #    save_path = prev_save_path
-       elif not reval or new_exp_folder:
-           if new_exp_folder and save_path:
+       elif not reval or exp_folder:
+           if exp_folder and save_path:
               relative_path = os.path.relpath(save_path, log_path)
               parts = relative_path.split(os.path.sep)
-              parts[0] = new_exp_folder 
+              parts[0] = exp_folder 
               new_path =  os.path.sep.join(parts)
               save_path = os.path.join(mylogs.resPath, new_path) 
               # save_path = os.path.join(str(Path(save_path).parent), experiment)
-           elif new_exp_folder:
-              save_path = os.path.join(log_path, new_exp_folder)
+           elif exp_folder:
+              save_path = os.path.join(log_path, exp_folder)
            else:
               save_path = os.path.join(log_path, experiment)
            if Path(save_path).exists():
@@ -456,7 +450,7 @@ def experiment_runner(func=None):
        args["conf"] = exp_conf
        args["save_path"] = save_path
 
-       args["new_exp_folder"] = new_exp_folder
+       args["exp_folder"] = exp_folder
        args["copy_prev_exp"] = copy_prev_exp
        args["load_path"] = "" 
        args["label"] = label
@@ -684,8 +678,7 @@ def experiment_runner(func=None):
        else:
            exp_output_dir = "" #current folder
 
-
-       for counter, comb in enumerate(tot_comb):
+       for counter, comb in enumerate(tot_comb, start=1):
            _output_dir = []
            prev_name = ""
            prev_item = ""
@@ -739,12 +732,12 @@ def experiment_runner(func=None):
            else:
                args["expid"] = ii 
 
-           args["main_vars"] = mvars
+           # args["main_vars"] = mvars
            args["cat"] = experiment.split("/")[-1] 
            args = {**exp_args, **args}
            #_output_dir.append(str(args["expid"]))
            output_dir = save_path 
-           if exp_conf and not new_exp_folder:
+           if exp_conf and not exp_folder:
                 output_dir = exp_output_dir 
            if merge:
                ee = args["expid"]
@@ -908,14 +901,14 @@ def experiment_runner(func=None):
                    if preview == "run":
                        ans = input("Run this? [yes/stop/next] [yes]:")
                        if not ans or ans == "yes":
-                           done = func(args, df)
+                           done = func(args, mvars, df)
                        elif ans == "stop":
                            print("Stop!")
                            return
                        else:
                            continue
                    else:
-                       done = func(args, df)
+                       done = func(args, mvars, df)
                    y_labels.append(args["expid"])
                    if done != "has_conflict" and done != "is_repeated":
                        with open(conf_fname, "w") as f:
@@ -935,10 +928,6 @@ def experiment_runner(func=None):
                print("return due preview:", preview, " done:",  done)
                return
     return run
-
-@experiment_runner
-def train(args, df):
-    print(args)
 
 if __name__ == "__main__":
     cli()
