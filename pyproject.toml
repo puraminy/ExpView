@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "expframe"
+name = "expview"
 version = "0.1.0"
 description = "Experimental data manager and visualization tools"
 readme = "README.md"
@@ -37,8 +37,8 @@ Homepage = "https://github.com/puraminy/ExpView"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["expframe*"]
+include = ["expview*"]
 
 [project.scripts]
-expframe = "expframe.show:main"
+expview = "expview.show:main"
 

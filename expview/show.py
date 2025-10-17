@@ -30,10 +30,10 @@ import re
 import seaborn as sns
 from pathlib import Path
 import pandas as pd
-from expframe.win import *
+from expview.win import *
 from datetime import datetime, timedelta
-import expframe.mylogs as mylogs
-from expframe.mylogs import *
+import expview.mylogs as mylogs
+from expview.mylogs import *
 import time
 import json
 from tqdm import tqdm
@@ -48,7 +48,7 @@ from PIL import ImageChops
 #import mto.metrics.metrics as mets
 import scipy
 import math
-import expframe.reports as reports
+import expview.reports as reports
 
 matplotlib.rcParams.update({
     'font.size': 16,              # Base font size (larger for small figure widths)

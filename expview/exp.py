@@ -1,6 +1,6 @@
 import click
 import debugpy
-import expframe.mylogs as mylogs
+import expview.mylogs as mylogs
 import glob
 import json
 from pathlib import Path
@@ -8,7 +8,7 @@ import os
 import itertools
 import os.path as op
 import logging
-from expframe.utils import * 
+from expview.utils import * 
 # from deepdiff import DeepDiff #TODO
 logger = logging.getLogger(__name__)
 import pandas as pd

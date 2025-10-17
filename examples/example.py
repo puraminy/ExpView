@@ -1,6 +1,6 @@
 # example.py
 import random
-from expframe import experiment, cli
+from expview import experiment, cli
 
 
 @experiment
