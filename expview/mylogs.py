@@ -191,7 +191,8 @@ def trace(frame, event, arg):
             print("%s @ %s" % (filename, lineno))
     return trace
 
-mlog.info(now)
+#mlog.info(now)
+minfo("Scanning for data files (*.csv, *.tsv) and loading them...")
 #sys.settrace(trace)
 def add_handler(logger, fname, set_format=False, base_folder=""):
     log_folder = os.path.join(base_folder, "logs")

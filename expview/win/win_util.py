@@ -358,7 +358,7 @@ def minput(mwin, row, col, prompt_string, exit_on = [], default="", mode = PROMP
         mwin.border()
         print_there(row, col, prompt_string, mwin)
         if footer == "":
-            footer =  "<Insert> or \: Insert | <ESC>: Close | Shift + Del: Clear | Shift + Left: Delete line"
+            footer =  "<Insert> : Insert | <ESC>: Close | Shift + Del: Clear | Shift + Left: Delete line"
             footer = textwrap.shorten(footer, mcols)
         if mode == MULTI_LINE:
             print_there(mrows-1, col, footer, mwin)
