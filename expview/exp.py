@@ -133,7 +133,6 @@ def experiment(func=None):
                 ignore_unknown_options=True,
                 allow_extra_args=True,))
 
-    @click.argument('cfg_pat')
     @click.option(
         "--experiment",
         "-exp",
@@ -148,6 +147,13 @@ def experiment(func=None):
         default="all",
         type=str,
         help="The name of a new directory for experiment when loading an existing config file"
+    )
+    @click.option(
+        "--cfg_pat",
+        "-p",
+        default="",
+        type=str,
+        help="A file containing configs"
     )
     @click.option(
         "--exp_conf",
@@ -347,25 +353,30 @@ def experiment(func=None):
        if not log_path.startswith("/"):
            log_path = os.path.join(mylogs.logPath, log_path)
        if exp_conf or cfg_pat:
-            print("Experiment pattern:", cfg_pat)
-            cur_path = os.getcwd()
-            print("Cur path:", cur_path)
-            confs = glob.glob(f"*{cfg_pat}*")
-            print("Experiment matched confs:", confs)
-            if not exp_conf and confs:
-                exp_conf = confs[0]
-            print("Experiment config:", exp_conf)
-            try:
-                with open(exp_conf) as f:
-                    exp_args = json.load(f)
-            except FileNotFoundError as e:
-                print(e)
-                raise ValueError( f"Looking for *{cfg_pat}* {confs} were matched: " + exp_conf)
+            if cfg_pat:
+                print("Experiment pattern:", cfg_pat)
+                cur_path = os.getcwd()
+                confs = glob.glob(f"*{cfg_pat}*")
+                print("Experiment matched confs:", confs)
+                if not exp_conf and confs:
+                    exp_conf = confs[0]
+            exp_args = {}
+            if exp_conf:
+                print("Experiment config:", exp_conf)
+                try:
+                    with open(exp_conf) as f:
+                        exp_args = json.load(f)
+                except FileNotFoundError as e:
+                    print( f"Looking for *{cfg_pat}*, no configuration file was found!")
+                    return
+
             prev_exp_folder = exp_args["load_model_dir"] if "load_model_dir" in exp_args else ""
             prev_save_path = exp_args.get("save_path","")
             copy_prev_exp = copy_prev_exp or exp_args.get("copy_prev_exp", False)
-            exp_conf_name = Path(exp_conf).stem
-            exp_args["conf"] = exp_conf_name
+            exp_args["conf"] = ""
+            if exp_conf:
+                exp_conf_name = Path(exp_conf).stem
+                exp_args["conf"] = exp_conf_name
             _expid = str(exp_args["expid"]).split("-")[-1] if "expid" in exp_args else "0"
             exp_args["trial"] = str(trial) + "-ret-" + _expid 
             if experiment == "exp":
