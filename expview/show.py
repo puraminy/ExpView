@@ -1,8 +1,8 @@
 # v 10
-import scipy.stats as stats
+# import scipy.stats as stats
 # get ANOVA table as R like output
-import statsmodels.api as sm
-from statsmodels.formula.api import ols
+# import statsmodels.api as sm
+# from statsmodels.formula.api import ols
 # from pandas.table.plotting import table # EDIT: see deprecation warnings below
 from pandas.plotting import table
 # import dataframe_image as dfi
@@ -10,13 +10,12 @@ from pandas.plotting import table
 import pyperclip
 #from metrics.metrics import do_score
 
-from distutils.dir_util import copy_tree, remove_tree
 import subprocess
 from functools import reduce
 import matplotlib.pyplot as plt
 import matplotlib
 from curses import wrapper
-from tabulate import tabulate
+# from tabulate import tabulate
 import click
 import warnings
 import itertools
@@ -46,7 +45,7 @@ from PIL import ImageChops
 #import sklearn
 #import sklearn.metrics
 #import mto.metrics.metrics as mets
-import scipy
+# import scipy
 import math
 import expview.reports as reports
 
@@ -77,6 +76,20 @@ matplotlib.rcParams.update({
     'pdf.fonttype': 42,           # Embed fonts correctly in PDFs
     'ps.fonttype': 42,
 })
+
+def copy_tree(src, dst):
+    if not os.path.exists(dst):
+        os.makedirs(dst)
+    for item in os.listdir(src):
+        s = os.path.join(src, item)
+        d = os.path.join(dst, item)
+        if os.path.isdir(s):
+            copy_tree(s, d)
+        else:
+            shutil.copy2(s, d)
+
+def remove_tree(path):
+    shutil.rmtree(path, ignore_errors=True)
 
 from PyPDF2 import PdfMerger
 def cross_task(df, fname, tasks, title=""):
@@ -1085,12 +1098,13 @@ def show_df(df, summary=False):
     #    df["m_score"] = np.where((df['m_score']<=0), 0.50, df['m_score'])
 
     orig_tag_cols = tag_cols.copy()
-    
-    src_path = df.loc[0, "src_path"]
-    if "src_path" in df and False:
+    src_path = None
+    if "src_path" in df:
         src_path = df.loc[0, "src_path"]
-        if not src_path.startswith("/"):
+        if type(src_path) == str and not src_path.startswith("/"):
             src_path = os.path.join(mylogs.home, src_path)
+        else:
+            src_path = None
     if "pred_text1" in df:
         br_col = df.loc[: , "bert_score":"rouge_score"]
         df['nr_score'] = df['rouge_score']
@@ -1153,8 +1167,11 @@ def show_df(df, summary=False):
     note_dir = os.path.join(doc_dir, "notes")
     Path(note_dir).mkdir(exist_ok=True, parents=True)
     all_cols = {}
-    with open(os.path.join(src_path, 'cols.json'),'r') as f:
-        all_cols = json.load(f)
+    if src_path is not None:
+        cols_path = os.path.join(src_path, 'cols.json')
+        if Path(cols_path).file_exists():
+            with open(cols_path,'r') as f:
+                all_cols = json.load(f)
 
     if 'sel_cols' in all_cols:
         if not summary:
@@ -3792,7 +3809,7 @@ def show_df(df, summary=False):
                 fig.savefig(pname)
                 ax = None
                 subprocess.run(["eog", pname])
-        if cmd.startswith("anova"):
+        if cmd.startswith("anova") and False:
             to = ""
             pics_dir = "/home/ahmad/Documents/Papers/Applied_Int_paper/pics" #os.getcwd() 
             canceled, val = False, "pred_text1" # list_values(sel_cols)
@@ -3814,7 +3831,7 @@ def show_df(df, summary=False):
                 fval = df.iloc[0]["F"]
                 ax.set_title(title + "   F-Value:" + str(fval) + "  P-Value:" + str(pval))
                 plt.show()
-        if cmd.startswith("banova"):
+        if cmd.startswith("banova") and False:
             to = ""
             pics_dir = "/home/ahmad/Documents/Papers/Applied_Int_paper/pics" #os.getcwd() 
             canceled, val = False, "target_text" # list_values(sel_cols)
@@ -3836,7 +3853,7 @@ def show_df(df, summary=False):
                 fval = df.iloc[0]["F"]
                 ax.set_title(title + "   F-Value:" + str(fval) + "  P-Value:" + str(pval))
                 plt.show()
-        if cmd.startswith("hanova"):
+        if cmd.startswith("hanova") and False:
             to = ""
             pics_dir = "/home/ahmad/Documents/Papers/Applied_Int_paper/pics" #os.getcwd() 
             dest_folder = rowinput("Dest Folder:")
@@ -4960,8 +4977,6 @@ def get_files(dfpath, dfname, dftype, summary, limit, file_id="parent", current_
                 df = pd.read_table(f, low_memory=False)
             elif f.endswith(".csv"):
                 df = pd.read_csv(f, low_memory=False)
-            elif f.endswith(".json"):
-                df = load_results(f)
             else:
                 continue
             force_fid = False
@@ -5164,7 +5179,7 @@ def main(ctx, fname, path, fid, ftype, dpy, summary, hkey, cmd, search, limit, n
         dfname = "merged"
         wrapper(start)
     else:
-        mlog.info("No csv, tsv or json file was found!")
+        mlog.info("No csv, tsv file was found!")
 
 if __name__ == "__main__":
     main()

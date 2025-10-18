@@ -9,7 +9,7 @@ from pathlib import Path
 from appdirs import *
 from appdirs import AppDirs
 import json
-import ipdb
+import pdb
 
 appname = "mto"
 appauthor = "ahmad"
@@ -179,7 +179,7 @@ def bp(break_point):
         fname = sys._getframe().f_back.f_code.co_name
         line = sys._getframe().f_back.f_lineno
         mlog.info(">>>>>> break point %s at %s line %s",break_point, fname, line)
-        ipdb.set_trace()
+        pdb.set_trace()
 
 def trace(frame, event, arg):
     if event == "call":
