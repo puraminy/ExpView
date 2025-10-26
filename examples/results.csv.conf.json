@@ -2,25 +2,18 @@
   "exp_cols_sum": [],
   "sel_cols": [
     "expid",
+    "model",
+    "task",
     "batch_size",
     "learning_rate",
-    "accuracy",
-    "var2",
-    "var1"
+    "accuracy"
   ],
   "ex_cols": [],
   "dim_cols": [],
   "measure_cols": [],
   "rep_cols": [
     "batch_size",
-    "learning_rate",
-    "label",
-    "expid",
-    "src_path",
-    "trial",
-    "output_dir",
-    "var2",
-    "var1"
+    "learning_rate"
   ],
   "ee": [],
   "extra_cols": [
@@ -31,5 +24,5 @@
   "score_cols": [
     "accuracy"
   ],
-  "init_col": "var2"
+  "init_col": "task"
 }

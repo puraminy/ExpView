@@ -29,10 +29,7 @@ import re
 import seaborn as sns
 from pathlib import Path
 import pandas as pd
-from expview.win import *
 from datetime import datetime, timedelta
-import expview.mylogs as mylogs
-from expview.mylogs import *
 import time
 import json
 from tqdm import tqdm
@@ -47,7 +44,10 @@ from PIL import ImageChops
 #import mto.metrics.metrics as mets
 # import scipy
 import math
+from expview.win import *
 import expview.reports as reports
+import expview.mylogs as mylogs
+from expview.mylogs import *
 
 matplotlib.rcParams.update({
     'font.size': 16,              # Base font size (larger for small figure widths)
@@ -718,137 +718,6 @@ def add_cols(df):
     for col in df.columns:
         if col.endswith("score"):
             df[col] = pd.to_numeric(df[col])
-
-    df = df.drop(columns = [c for c in df.columns if c.startswith("c-")])
-    df['id']=df.index
-    df = df.reset_index(drop=True)
-    if not "tag" in df:
-        df["tag"] = np.nan 
-    if not "hscore" in df:
-        df["hscore"] = np.nan 
-
-    if not "pid" in df:
-        df["pid"] = 0
-    if "gen_route_methods" in df:
-        df["gen_norm_method"] = df["gen_route_methods"]
-        df["norm_method"] = df["apply_softmax_to"]
-
-    if "gen_norm_methods" in df:
-        df["gen_norm_method"] = df["gen_norm_methods"]
-
-    if not "query" in df and "input_text" in df:
-        df["query"] = df["input_text"]
-    if not "learning_rate" in df:
-        df["learning_rate"] = 1
-
-    if not "prefixed" in df:
-        df["prefixed"] = False
-
-    if not "sel" in df:
-       df["sel"] = False
-
-    if not "template" in df:
-       df["template"] = ""
-
-    if not "bert_score" in df:
-       df["bert_score"] = 0
-
-    if "model_name_or_path" in df:
-        df["model_temp"] = df["model_name_or_path"].str.split("-").str[2]
-        df["model_base"] = df["model_name_or_path"].str.split("-").str[1]
-    #if "fid" in df:
-    #    df = df.rename(columns={"fid":"expid"})
-
-    template_mapping = {
-         'sup': 'Mapping', 
-         'unsup': 'MaskedMapping',
-         'sup-nat': 'Prompting', 
-         'unsup-nat': 'MaskedPrompting',
-         'vnat-v3': 'MaskedChoicePrompting',
-         'vnat-v33': 'MaskedChoicePrompting33',
-         'vnat_1-vs2': "ChoicePrompting",
-         'vnat_0-v4': "MaskedAnswerPrompting",
-         'vnat_0-vs2': "AnswerPrompting",
-         '0-ptar-sup': 'PostPT', 
-         "ptar-sup":"PreSup", 
-         'ptar-unsup-nat':'MaskedPrePT',
-         'ptar-sup-nat': 'PrePT', 
-         '0-ptar-unsup': 'MaskedPostPT',
-         '0-ptar-vnat-v3': 'MaskedAnswerPT', 
-         '0-ptar-vnat_1-vs1': 'AnswerPT',
-         'ptar-vnat_0-v4':'PreMaskedAnswerPT',
-         '0-ptar-vnat_0-v4':'PostMaskedAnswerPT',
-         'ptar-vnat_0-vs2':'PreAnswerPT',
-         '0-ptar-vnat_0-vs2':'PostAnswerPT',
-         # 'vnat_1-vs2': "Predict Choice Number",
-        }
-    templates = df["template"].unique()
-    if any("sup" in str(x) or "vnat" in str(x) for x in templates):
-        df['template'] = df['template'].map(template_mapping)
-    model_temp_mapping = {
-        'none': '---', 
-        'sup': 'LM', 
-        'unsup': 'Denoising',
-        "mixed": "Mixed"
-        }
-    if "model_temp" in df:
-        model_temps = df["model_temp"].unique()
-        if any("sup" in str(x) for x in model_temps):
-            df['model_temp'] = df['model_temp'].map(model_temp_mapping)
-
-    overrides = {'SL': 'SL1', 'SLP': 'SLP1'}
-    if False:
-        df['prompts_conf'] = df['prompts_conf'].map(lambda x: overrides.get(x, x))
-    if "input_text" in df:
-        df['input_text'] = df['input_text'].str.replace('##','')
-        df['input_text'] = df['input_text'].str.split('>>').str[0]
-        df['input_text'] = df['input_text'].str.strip()
-
-    if not "plen" in df:
-        df["plen"] = 8
-    if not "blank" in df:
-        df["blank"] = "blank"
-    if not "opt_type" in df:
-        df["opt_type"] = "na"
-    if not "rouge_score" in df:
-        df["rouge_score"] = 0
-    if not "bert_score" in df:
-        df["bert_score"] = 0
-
-    if "mask_type" in df:
-        df["cur_masking"] = (df["mask_type"].str.split("-").str[1] + "-" 
-                + df["mask_type"].str.split("-").str[2]) 
-    if "use_masked_attn" in df:
-        df["use_masked_attn"] = df["use_masked_attn"].astype(str)
-
-    if False:
-        # df.loc[df["rouge_score"] < 1, ["rouge_score", "bert_score"]] *= 100
-        df["rouge_score"] = df["rouge_score"]*100 
-        df["bert_score"] = df["bert_score"]*100 
-    if True: #"compose_method" in df:
-        #df["expid"] = df["exp_name"].str.split("-").str[1]
-        if "prompts_conf" in df:
-            df.loc[df['prompts_conf'] == 'SLP', 'num_target_prompts'] -= 1
-        # if not "expid" in df:
-        #df["expid"] = df["expid"].astype(str).str.replace("_num", "", regex=False)
-        df["expname"] = df["exp_name"].str.split("-").str[1]
-        df["ftag"] = df["folder"].str.split("/").str[-1]
-        df["ftag"] = df["ftag"].str.split("_").str[0]
-        if "sim_src" in df:
-            df["sim_pvt"] = round(df["sim_pvt"],2)
-            df["sim_src"] = round(df["sim_src"],2)
-        if "wsim_src" in df:
-            df["wsim_src"] = round(df["wsim_src"],2)
-            df["wsim_pvt"] = round(df["wsim_pvt"],2)
-
-        #df["model_base"] = df["model_name_or_path"].apply(lambda x: '-'.join(x.split('-')[1:2] + x.split('-')[-2:]))
-
-    if False: #"expid" in df:
-        df["expid"] = df["expid"]
-        df["expname"] = df["expid"].str.split("-").str[0]
-        df["expname"] = df["expname"].str.split("_").str[0]
-        df["expid"] = df["expid"].str.split("-").str[1]
-        df["expid"] = df["expid"].str.split(".").str[0]
     return df
 
 def find_common(df, main_df, on_col_list, s_rows, FID, char, tag_cols):
@@ -1098,13 +967,14 @@ def show_df(df, summary=False):
     #    df["m_score"] = np.where((df['m_score']<=0), 0.50, df['m_score'])
 
     orig_tag_cols = tag_cols.copy()
-    src_path = None
+    src_path = df.loc[0, "path"] if "path" in df else None
     if "src_path" in df:
         src_path = df.loc[0, "src_path"]
-        if type(src_path) == str and not src_path.startswith("/"):
-            src_path = os.path.join(mylogs.home, src_path)
-        else:
-            src_path = None
+        if not src_path.startswith("/"):
+            if type(src_path) == str: 
+                src_path = os.path.join(mylogs.home, src_path)
+            else:
+                src_path = None
     if "pred_text1" in df:
         br_col = df.loc[: , "bert_score":"rouge_score"]
         df['nr_score'] = df['rouge_score']
@@ -1168,8 +1038,11 @@ def show_df(df, summary=False):
     Path(note_dir).mkdir(exist_ok=True, parents=True)
     all_cols = {}
     if src_path is not None:
-        cols_path = os.path.join(src_path, 'cols.json')
-        if Path(cols_path).file_exists():
+        if Path(src_path).is_file():
+            cols_path = src_path + ".conf.json"
+        else:
+            cols_path = os.path.join(src_path, 'conf.json')
+        if Path(cols_path).is_file():
             with open(cols_path,'r') as f:
                 all_cols = json.load(f)
 
@@ -4931,12 +4804,13 @@ def get_files(dfpath, dfname, dftype, summary, limit, file_id="parent", current_
         mlog.info("No file name provided")
     else:
         path = os.path.join(dfpath, *dfname)
+        matched_files = []
         if Path(path).is_file():
             files = [path]
-            dfname = Path(dfname).stem
+            dfname = Path(dfname[0]).stem
+            matched_files = [(os.path.getctime(path), path)]
         else:
             files = []
-            matched_files = []
             dfpath = os.path.abspath(dfpath)
             dfpath = os.path.abspath(dfpath)
             all_files = glob(os.path.join(dfpath, '**'), recursive=True)
@@ -5161,19 +5035,31 @@ def main(ctx, fname, path, fid, ftype, dpy, summary, hkey, cmd, search, limit, n
     hotkey = hkey 
     global_cmd = cmd
     dfname = fname
+
+    dfname_input = list(fname)  # may be empty list if not provided
+    if len(dfname_input) == 0:
+        dfname_arg = None
+    elif len(dfname_input) == 1:
+        dfname_arg = dfname_input[0]
+    else:
+        dfname_arg = dfname_input
+
     dftype = set(["tsv","csv", ftype])
     runid = mylogs.get_run_id()
     counter = int(runid.replace("run_",""))
-    if limit > 0 and not fname:
-        fname = []
+    if limit > 0 and not dfname_arg:
+        dfname_arg = []
         for cc in range(counter, counter - limit, -1):
-           fname.append("run_" + str(cc))
+           dfname_arg.append("run_" + str(cc))
     elif limit == -2:
-        fname = []
-    elif not fname:
-        fname = [runid] if limit < 0 else []
+        dfname_arg = []
+    elif not dfname_arg:
+        dfname_arg = [runid] if limit < 0 else []
+    if type(dfname_arg) != list:
+        dfname_arg = [dfname_arg]
+
     set_app("showdf")
-    dfs = get_files(path, fname, ftype, summary=summary, limit=limit, file_id= fid)
+    dfs = get_files(path, dfname_arg, ftype, summary=summary, limit=limit, file_id= fid)
     if dfs is not None:
         data_frame = pd.concat(dfs, ignore_index=True)
         dfname = "merged"

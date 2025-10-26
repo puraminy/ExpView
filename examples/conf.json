@@ -1,0 +1,35 @@
+{
+  "exp_cols_sum": [],
+  "sel_cols": [
+    "expid",
+    "batch_size",
+    "learning_rate",
+    "accuracy",
+    "var2",
+    "var1"
+  ],
+  "ex_cols": [],
+  "dim_cols": [],
+  "measure_cols": [],
+  "rep_cols": [
+    "batch_size",
+    "learning_rate",
+    "label",
+    "expid",
+    "src_path",
+    "trial",
+    "output_dir",
+    "var2",
+    "var1"
+  ],
+  "ee": [],
+  "extra_cols": [
+    "accuracy"
+  ],
+  "info_cols": [],
+  "index_cols": [],
+  "score_cols": [
+    "accuracy"
+  ],
+  "init_col": "var2"
+}

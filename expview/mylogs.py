@@ -101,7 +101,7 @@ else:
 pp = Path(__file__).parent.parent.resolve()
 dataPath = os.path.join(pp, "data", "atomic2020")
 
-Path(resPath).mkdir(exist_ok=True, parents=True)
+#Path(resPath).mkdir(exist_ok=True, parents=True)
 Path(logPath).mkdir(exist_ok=True, parents=True)
 
 #logFilename = os.path.join(logPath, "all.log") #app_path + '/log_file.log'
