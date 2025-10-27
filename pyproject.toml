@@ -29,8 +29,12 @@ dependencies = [
     "debugpy>=1.8",
     "windows-curses; platform_system=='Windows'"
 ]
+
 [project.urls]
-Homepage = "https://github.com/puraminy/ExpView"
+Homepage = "https://puraminy.github.io/expview/"
+Documentation = "https://puraminy.github.io/expview/"
+Repository = "https://github.com/puraminy/expview"
+Issues = "https://github.com/puraminy/expview/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
