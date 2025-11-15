@@ -27,5 +27,5 @@ If you have multiple datasets in a folder, just run:
 expview
 ```
 
-For full documentation, refer to the [GitHub homepage](https://puraminy.github.com/expview).
+For full documentation, refer to the [GitHub homepage](https://puraminy.github.io/expview).
 
